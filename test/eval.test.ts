@@ -1,11 +1,12 @@
 import { jsonSchemaToZod } from "../src/jsonSchemaToZod.js";
+import { jsonSchemaToZodString } from "../src/jsonSchemaToZodString.js";
 import ts from "typescript";
 import { suite } from "./suite";
 
 suite("eval", (test) => {
   test("is usable I guess", (assert) => {
     const zodSchema = eval(
-      jsonSchemaToZod({ type: "string" }, { module: "cjs" }),
+      jsonSchemaToZodString({ type: "string" }, { module: "cjs" }),
     );
 
     assert(zodSchema.safeParse("Please just use Ajv instead"), {
@@ -15,7 +16,7 @@ suite("eval", (test) => {
   });
 
   test("oneOf accepts input when exactly one schema passes", (assert) => {
-    const generated = jsonSchemaToZod(
+    const generated = jsonSchemaToZodString(
       {
         oneOf: [
           {

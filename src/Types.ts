@@ -66,21 +66,19 @@ export type ParserOverride = (
 export type ZodVersion = 3 | 4;
 
 export type Options = {
-  name?: string;
-  module?: "cjs" | "esm" | "none";
   withoutDefaults?: boolean;
   withoutDescribes?: boolean;
-  withJsdocs?: boolean;
-  parserOverride?: ParserOverride;
   depth?: number;
-  type?: boolean | string;
-  noImport?: boolean;
   zodVersion?: ZodVersion;
 };
 
 export type Refs = Options & {
   path: (string | number)[];
   seen: Map<object | boolean, { n: number; r: string | undefined }>;
+  name?: string;
+  module?: "cjs" | "esm" | "none";
+  withJsdocs?: boolean;
+  parserOverride?: ParserOverride;
 };
 
 export type SimpleDiscriminatedOneOfSchema<D extends string = string> = JsonSchemaObject & {

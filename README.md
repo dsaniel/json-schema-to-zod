@@ -106,18 +106,41 @@ const myObject = {
   },
 };
 
-const module = jsonSchemaToZod(myObject, { module: "esm" });
+// Returns a Zod schema object directly
+const zodSchema = jsonSchemaToZod(myObject);
+
+// You can now use the schema to validate data
+const result = zodSchema.parse({ hello: "world" });
+```
+
+#### Generating code strings (for CLI/codegen use cases)
+
+If you need to generate string code (for code generation purposes), use `jsonSchemaToZodString`:
+
+```typescript
+import { jsonSchemaToZodString } from "json-schema-to-zod";
+
+const myObject = {
+  type: "object",
+  properties: {
+    hello: {
+      type: "string",
+    },
+  },
+};
+
+const module = jsonSchemaToZodString(myObject, { module: "esm" });
 
 // `type` can be either a string or - outside of the CLI - a boolean. If its `true`, the name of the type will be the name of the schema with a capitalized first letter.
-const moduleWithType = jsonSchemaToZod(myObject, {
+const moduleWithType = jsonSchemaToZodString(myObject, {
   name: "mySchema",
   module: "esm",
   type: true,
 });
 
-const cjs = jsonSchemaToZod(myObject, { module: "cjs", name: "mySchema" });
+const cjs = jsonSchemaToZodString(myObject, { module: "cjs", name: "mySchema" });
 
-const justTheSchema = jsonSchemaToZod(myObject);
+const justTheSchema = jsonSchemaToZodString(myObject);
 ```
 
 ##### `module`
@@ -151,17 +174,32 @@ module.exports = { mySchema: z.object({ hello: z.string().optional() }) };
 z.object({ hello: z.string().optional() });
 ```
 
-#### Example with `$refs` resolved and output formatted
+#### Example with `$refs` resolved
+
+```typescript
+import { z } from "zod";
+import { resolveRefs } from "json-refs";
+import jsonSchemaToZod from "json-schema-to-zod";
+
+async function example(jsonSchema: Record<string, unknown>): Promise<z.ZodTypeAny> {
+  const { resolved } = await resolveRefs(jsonSchema);
+  const zodSchema = jsonSchemaToZod(resolved);
+
+  return zodSchema;
+}
+```
+
+#### Example for code generation with `$refs` resolved and output formatted
 
 ```typescript
 import { z } from "zod";
 import { resolveRefs } from "json-refs";
 import { format } from "prettier";
-import jsonSchemaToZod from "json-schema-to-zod";
+import { jsonSchemaToZodString } from "json-schema-to-zod";
 
 async function example(jsonSchema: Record<string, unknown>): Promise<string> {
   const { resolved } = await resolveRefs(jsonSchema);
-  const code = jsonSchemaToZod(resolved);
+  const code = jsonSchemaToZodString(resolved);
   const formatted = await format(code, { parser: "typescript" });
 
   return formatted;
@@ -178,12 +216,24 @@ Factored schemas (like object schemas with "oneOf" etc.) is only partially suppo
 
 #### Use at Runtime
 
-The output of this package is not meant to be used at runtime. JSON Schema and Zod does not overlap 100% and the scope of the parsers are purposefully limited in order to help the author avoid a permanent state of chaotic insanity. As this may cause some details of the original schema to be lost in translation, it is instead recommended to use tools such as [Ajv](https://ajv.js.org/) to validate your runtime values directly against the original JSON Schema.
-
-That said, it's possible in most cases to use `eval`. Here's an example that you shouldn't use:
+**New in this version:** `jsonSchemaToZod` now returns Zod schema objects directly, making it suitable for runtime use!
 
 ```typescript
-const zodSchema = eval(jsonSchemaToZod({ type: "string" }, { module: "cjs" }));
+import { jsonSchemaToZod } from "json-schema-to-zod";
 
-zodSchema.safeParse("Please just use Ajv instead");
+const zodSchema = jsonSchemaToZod({ type: "string" });
+
+// Use the schema directly at runtime
+const result = zodSchema.safeParse("Hello, world!");
+```
+
+**Note:** JSON Schema and Zod do not overlap 100%, and the scope of the parsers are purposefully limited. Some details of the original schema may be lost in translation. For complete JSON Schema validation, you may still want to use tools such as [Ajv](https://ajv.js.org/).
+
+For code generation use cases (CLI, build tools, etc.), use `jsonSchemaToZodString` instead:
+
+```typescript
+import { jsonSchemaToZodString } from "json-schema-to-zod";
+
+const code = jsonSchemaToZodString({ type: "string" }, { module: "esm" });
+// Returns: 'import { z } from "zod"\n\nexport default z.string()\n'
 ```

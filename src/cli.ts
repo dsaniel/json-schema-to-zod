@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { jsonSchemaToZod } from "./jsonSchemaToZod.js";
+import { jsonSchemaToZodString } from "./jsonSchemaToZodString.js";
 import { writeFileSync, mkdirSync } from "fs";
 import { dirname } from "path";
 import { parseArgs, parseOrReadJSON, readPipe } from "./utils/cliTools.js";
@@ -61,7 +61,7 @@ async function main() {
   const input = args.input || (await readPipe());
   const jsonSchema = parseOrReadJSON(input);
   const zodVersion = (args.zodVersion === 3 ? 3 : 4) as ZodVersion;
-  const zodSchema = jsonSchemaToZod(jsonSchema as JsonSchema, {
+  const zodSchema = jsonSchemaToZodString(jsonSchema as JsonSchema, {
     name: args.name,
     depth: args.depth,
     module: args.module || "esm",
