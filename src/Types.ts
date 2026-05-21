@@ -75,9 +75,6 @@ export type Options = {
 export type Refs = Options & {
   path: (string | number)[];
   seen: Map<object | boolean, { n: number; r: string | undefined }>;
-  name?: string;
-  module?: "cjs" | "esm" | "none";
-  withJsdocs?: boolean;
   parserOverride?: ParserOverride;
 };
 
