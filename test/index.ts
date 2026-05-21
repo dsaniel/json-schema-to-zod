@@ -1,6 +1,4 @@
 import "./jsonSchemaToZod.test.js";
-import "./cli.js";
-import "./eval.test.js";
 import "./parsers/parseAnyOf.test.js";
 import "./parsers/parseAllOf.test.js";
 import "./parsers/parseArray.test.js";
@@ -15,6 +13,5 @@ import "./parsers/parseOneOf.test.js";
 import "./parsers/parseSchema.test.js";
 import "./parsers/parseMultipleType.test.js";
 import "./parsers/parseString.test.js";
-import "./utils/cliTools.test.js";
 import "./utils/omit.test.js";
 import "./utils/half.test.js";

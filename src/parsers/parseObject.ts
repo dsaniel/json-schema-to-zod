@@ -3,7 +3,6 @@ import { parseAnyOf } from "./parseAnyOf.js";
 import { parseOneOf } from "./parseOneOf.js";
 import { its, parseSchema } from "./parseSchema.js";
 import { parseAllOf } from "./parseAllOf.js";
-import { addJsdocs } from "../utils/jsdocs.js";
 
 // Helper for z.record() generation - Zod v4 requires explicit key type
 function emitRecord(valueSchema: string, refs: Refs): string {
@@ -39,14 +38,10 @@ export function parseObject(
         .map((key) => {
           const propSchema = objectSchema.properties![key];
 
-          let result = `${JSON.stringify(key)}: ${parseSchema(propSchema, {
+          const result = `${JSON.stringify(key)}: ${parseSchema(propSchema, {
             ...refs,
             path: [...refs.path, "properties", key],
           })}`;
-
-          if (refs.withJsdocs && typeof propSchema === "object") {
-            result = addJsdocs(propSchema, result)
-          }
 
           const hasDefault =
             typeof propSchema === "object" && propSchema.default !== undefined;

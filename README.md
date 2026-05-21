@@ -11,11 +11,7 @@ _Thank you to all the contributors and sponsors throughout the years! So long, a
 
 ## Summary
 
-A runtime package and CLI tool to convert JSON schema (draft 4+) objects or files into Zod schemas in the form of JavaScript code.
-
-Before v2 it used [`prettier`](https://www.npmjs.com/package/prettier) for formatting and [`json-refs`](https://www.npmjs.com/package/json-refs) to resolve schemas. To replicate the previous behaviour, please use their respective CLI tools.
-
-Since v2 the CLI supports piped JSON.
+A runtime package to convert JSON schema (draft 4+) objects into Zod schemas.
 
 _Looking for the exact opposite? Check out [zod-to-json-schema](https://npmjs.org/package/zod-to-json-schema)_
 
@@ -24,71 +20,6 @@ _Looking for the exact opposite? Check out [zod-to-json-schema](https://npmjs.or
 ### Online
 
 [Just paste your JSON schemas here!](https://stefanterdell.github.io/json-schema-to-zod-react/)
-
-### CLI
-
-#### Simplest example
-
-```console
-npm i -g json-schema-to-zod
-```
-
-```console
-json-schema-to-zod -i mySchema.json -o mySchema.ts
-```
-
-#### Example with `$refs` resolved and output formatted
-
-```console
-npm i -g json-schema-to-zod json-refs prettier
-```
-
-```console
-json-refs resolve mySchema.json | json-schema-to-zod | prettier --parser typescript > mySchema.ts
-```
-
-#### Options
-
-| Flag           | Shorthand | Function                                                                                       |
-| -------------- | --------- | ---------------------------------------------------------------------------------------------- |
-| `--input`      | `-i`      | JSON or a source file path. Required if no data is piped.                                      |
-| `--output`     | `-o`      | A file path to write to. If not supplied stdout will be used.                                  |
-| `--name`       | `-n`      | The name of the schema in the output                                                           |
-| `--depth`      | `-d`      | Maximum depth of recursion in schema before falling back to `z.any()`. Defaults to 0.          |
-| `--module`     | `-m`      | Module syntax; `esm`, `cjs` or none. Defaults to `esm` in the CLI and `none` programmaticly.   |
-| `--type`       | `-t`      | Export a named type along with the schema. Requires `name` to be set and `module` to be `esm`. |
-| `--noImport`   | `-ni`     | Removes the `import { z } from 'zod';` or equivalent from the output.                          |
-| `--withJsdocs` | `-wj`     | Generate jsdocs off of the description property.                                               |
-| `--zodVersion` | `-zv`     | Target Zod version: `3` or `4`. Defaults to `4`.                                               |
-
-### Zod Version Targeting
-
-This package supports generating code compatible with both Zod v3 and v4. By default, Zod v4 syntax is generated.
-
-**Key differences between versions:**
-
-- **`z.record()`**: Zod v4 requires an explicit key type: `z.record(z.string(), valueSchema)` vs `z.record(valueSchema)` in v3
-- **Error paths**: Zod v4 uses simplified error paths in `superRefine` callbacks
-
-**CLI:**
-
-```console
-# Generate Zod v4 compatible code (default)
-json-schema-to-zod -i schema.json -o output.ts
-
-# Generate Zod v3 compatible code
-json-schema-to-zod -i schema.json -o output.ts --zodVersion 3
-```
-
-**Programmatic:**
-
-```typescript
-// Zod v4 (default)
-jsonSchemaToZod(schema, { zodVersion: 4 });
-
-// Zod v3
-jsonSchemaToZod(schema, { zodVersion: 3 });
-```
 
 ### Programmatic
 
@@ -106,65 +37,42 @@ const myObject = {
   },
 };
 
-const module = jsonSchemaToZod(myObject, { module: "esm" });
+// Returns a Zod schema object directly
+const zodSchema = jsonSchemaToZod(myObject);
 
-// `type` can be either a string or - outside of the CLI - a boolean. If its `true`, the name of the type will be the name of the schema with a capitalized first letter.
-const moduleWithType = jsonSchemaToZod(myObject, {
-  name: "mySchema",
-  module: "esm",
-  type: true,
-});
-
-const cjs = jsonSchemaToZod(myObject, { module: "cjs", name: "mySchema" });
-
-const justTheSchema = jsonSchemaToZod(myObject);
+// You can now use the schema to validate data
+const result = zodSchema.parse({ hello: "world" });
 ```
 
-##### `module`
+#### Zod Version Targeting
+
+This package supports generating schemas compatible with both Zod v3 and v4. By default, Zod v4 syntax is generated.
+
+**Key differences between versions:**
+
+- **`z.record()`**: Zod v4 requires an explicit key type: `z.record(z.string(), valueSchema)` vs `z.record(valueSchema)` in v3
+- **Error paths**: Zod v4 uses simplified error paths in `superRefine` callbacks
 
 ```typescript
-import { z } from "zod";
+// Zod v4 (default)
+const zodSchema = jsonSchemaToZod(schema, { zodVersion: 4 });
 
-export default z.object({ hello: z.string().optional() });
+// Zod v3
+const zodSchema = jsonSchemaToZod(schema, { zodVersion: 3 });
 ```
 
-##### `moduleWithType`
-
-```typescript
-import { z } from "zod";
-
-export const mySchema = z.object({ hello: z.string().optional() });
-export type MySchema = z.infer<typeof mySchema>;
-```
-
-##### `cjs`
-
-```typescript
-const { z } = require("zod");
-
-module.exports = { mySchema: z.object({ hello: z.string().optional() }) };
-```
-
-##### `justTheSchema`
-
-```typescript
-z.object({ hello: z.string().optional() });
-```
-
-#### Example with `$refs` resolved and output formatted
+#### Example with `$refs` resolved
 
 ```typescript
 import { z } from "zod";
 import { resolveRefs } from "json-refs";
-import { format } from "prettier";
 import jsonSchemaToZod from "json-schema-to-zod";
 
-async function example(jsonSchema: Record<string, unknown>): Promise<string> {
+async function example(jsonSchema: Record<string, unknown>): Promise<z.ZodTypeAny> {
   const { resolved } = await resolveRefs(jsonSchema);
-  const code = jsonSchemaToZod(resolved);
-  const formatted = await format(code, { parser: "typescript" });
+  const zodSchema = jsonSchemaToZod(resolved);
 
-  return formatted;
+  return zodSchema;
 }
 ```
 
@@ -176,14 +84,17 @@ You can pass a function to the `parserOverride` option, which represents a funct
 
 Factored schemas (like object schemas with "oneOf" etc.) is only partially supported. Here be dragons.
 
-#### Use at Runtime
+#### Runtime Usage
 
-The output of this package is not meant to be used at runtime. JSON Schema and Zod does not overlap 100% and the scope of the parsers are purposefully limited in order to help the author avoid a permanent state of chaotic insanity. As this may cause some details of the original schema to be lost in translation, it is instead recommended to use tools such as [Ajv](https://ajv.js.org/) to validate your runtime values directly against the original JSON Schema.
-
-That said, it's possible in most cases to use `eval`. Here's an example that you shouldn't use:
+`jsonSchemaToZod` returns Zod schema objects directly, making it suitable for runtime use:
 
 ```typescript
-const zodSchema = eval(jsonSchemaToZod({ type: "string" }, { module: "cjs" }));
+import { jsonSchemaToZod } from "json-schema-to-zod";
 
-zodSchema.safeParse("Please just use Ajv instead");
+const zodSchema = jsonSchemaToZod({ type: "string" });
+
+// Use the schema directly at runtime
+const result = zodSchema.safeParse("Hello, world!");
 ```
+
+**Note:** JSON Schema and Zod do not overlap 100%, and the scope of the parsers are purposefully limited. Some details of the original schema may be lost in translation. For complete JSON Schema validation, you may still want to use tools such as [Ajv](https://ajv.js.org/).
